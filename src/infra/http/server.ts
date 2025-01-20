@@ -41,7 +41,7 @@ server.register(fastifySwagger, {
 })
 server.register(uploadImageRoute)
 server.register(fastifySwaggerUi, {
-  prefix: '/docs',
+  routePrefix: '/docs',
 })
 
 console.log(env.DATABASE_URL)
