@@ -2,7 +2,7 @@ services:
   pg-upload-server:
     image: bitnami/postgresql:latest
     ports:
-      - '5423:5423'
+      - '5432:5432'
     environment:
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
