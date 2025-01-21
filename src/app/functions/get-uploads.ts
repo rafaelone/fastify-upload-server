@@ -45,7 +45,7 @@ export async function getUploads(
       })
       .from(schema.uploads)
       .where(
-        searchQuery ? ilike(schema.uploads.name, `${searchQuery}`) : undefined
+        searchQuery ? ilike(schema.uploads.name, `%${searchQuery}%`) : undefined
       )
       .orderBy(fields => {
         if (sortBy && sortDirection === 'asc') {
@@ -65,7 +65,7 @@ export async function getUploads(
       .select({ total: count(schema.uploads.id) })
       .from(schema.uploads)
       .where(
-        searchQuery ? ilike(schema.uploads.name, `${searchQuery}`) : undefined
+        searchQuery ? ilike(schema.uploads.name, `%${searchQuery}%`) : undefined
       ),
   ])
 
