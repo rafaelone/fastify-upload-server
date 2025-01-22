@@ -1,5 +1,6 @@
 import { PassThrough, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+
 import { db, pg } from '@/db'
 import { schema } from '@/db/schemas'
 import { uploadFileToStorage } from '@/infra/storage/upload-file-to-storage'
@@ -10,6 +11,10 @@ import { z } from 'zod'
 
 const exportUploadsInput = z.object({
   searchQuery: z.string().optional(),
+  sortBy: z.enum(['createdAt']).optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
+  page: z.number().optional().default(1),
+  pageSize: z.number().optional().default(20),
 })
 
 type ExportUploadsInput = z.input<typeof exportUploadsInput>
@@ -27,6 +32,7 @@ export async function exportUploads(
     .select({
       id: schema.uploads.id,
       name: schema.uploads.name,
+      remoteKey: schema.uploads.remoteKey,
       remoteUrl: schema.uploads.remoteUrl,
       createdAt: schema.uploads.createdAt,
     })
@@ -36,32 +42,20 @@ export async function exportUploads(
     )
     .toSQL()
 
-  const cursor = pg.unsafe(sql, params as string[]).cursor(2)
+  const cursor = pg.unsafe(sql, params as string[]).cursor(1)
 
-  // for await (const rows of cursor) {
-  //   console.log(rows)
-  // }
+  /*   for await (const rows of cursor) {
+    console.log(rows)
+  } */
 
   const csv = stringify({
     delimiter: ',',
     header: true,
     columns: [
-      {
-        key: 'id',
-        header: 'ID',
-      },
-      {
-        key: 'name',
-        header: 'Name',
-      },
-      {
-        key: 'remote_url',
-        header: 'URL',
-      },
-      {
-        key: 'created_at',
-        header: 'Uploaded at',
-      },
+      { key: 'id', header: 'ID' },
+      { key: 'name', header: 'Name' },
+      { key: 'remote_url', header: 'URL' },
+      { key: 'created_at', header: 'Uploaded at' },
     ],
   })
 
@@ -79,11 +73,12 @@ export async function exportUploads(
       },
     }),
     csv,
-
     uploadToStorageStream
   )
 
-  const uploadToStorage = await uploadFileToStorage({
+  await convertToCSVPipeline
+
+  const uploadToStorage = uploadFileToStorage({
     contentType: 'text/csv',
     folder: 'downloads',
     fileName: `${new Date().toISOString()}-uploads.csv`,
@@ -91,8 +86,6 @@ export async function exportUploads(
   })
 
   const [{ url }] = await Promise.all([uploadToStorage, convertToCSVPipeline])
-  // await convertToCSVPipeline
-  // console.log(url)
 
   return makeRight({ reportUrl: url })
 }
