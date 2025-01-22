@@ -29,17 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: yarn/action-setup@v4
-        name: Install yarn
-        with:
-          version: 9
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'yarn'
+          cache: yarn
 
       - run: yarn install --frozen-lockfile
       - run: yarn run test
